@@ -15,6 +15,7 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
     AGEmojiKeyboardViewCategoryImageRecent,
     AGEmojiKeyboardViewCategoryImagePeople,
     AGEmojiKeyboardViewCategoryImageNature,
+    AGEmojiKeyboardViewCategoryImageFood,
     AGEmojiKeyboardViewCategoryImageActivity,
     AGEmojiKeyboardViewCategoryImageTravel,
     AGEmojiKeyboardViewCategoryImageObjects,

@@ -43,7 +43,7 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 }
 
 - (NSString *)categoryNameAtIndex:(NSUInteger)index {
-    NSArray *categoryList = @[@"Keyboard", @"Recent", @"People", @"Nature", @"Activity", @"Travel", @"Objects", @"Symbols"];
+    NSArray *categoryList = @[@"Keyboard", @"Recent", @"People", @"Nature", @"Food" @"Activity", @"Travel", @"Objects", @"Symbols"];
     return categoryList[index];
 }
 
