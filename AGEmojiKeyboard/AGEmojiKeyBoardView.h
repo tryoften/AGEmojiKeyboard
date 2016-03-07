@@ -13,12 +13,12 @@
 typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
     AGEmojiKeyboardViewCategoryImageKeyboard,
     AGEmojiKeyboardViewCategoryImageRecent,
-    AGEmojiKeyboardViewCategoryImageFace,
-    AGEmojiKeyboardViewCategoryImageBell,
-    AGEmojiKeyboardViewCategoryImageFlower,
-    AGEmojiKeyboardViewCategoryImageCar,
-    AGEmojiKeyboardViewCategoryImageCharacters,
-    AGEmojiKeyboardViewCategoryImageTravel
+    AGEmojiKeyboardViewCategoryImagePeople,
+    AGEmojiKeyboardViewCategoryImageNature,
+    AGEmojiKeyboardViewCategoryImageActivity,
+    AGEmojiKeyboardViewCategoryImageTravel,
+    AGEmojiKeyboardViewCategoryImageObjects,
+    AGEmojiKeyboardViewCategoryImageSymbols
 };
 
 @protocol AGEmojiKeyboardViewDelegate;
@@ -76,24 +76,14 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
  @param category category to get the image for. @see AGEmojiKeyboardViewCategoryImage
  */
 - (UIImage *)emojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView
-      imageForSelectedCategory:(AGEmojiKeyboardViewCategoryImage)category;
+              imageForCategory:(AGEmojiKeyboardViewCategoryImage)category;
 
 /**
- Method called on dataSource to get the category image when not-selected.
- 
- @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
- 
- @param category category to get the image for. @see AGEmojiKeyboardViewCategoryImage
- */
-- (UIImage *)emojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView
-   imageForNonSelectedCategory:(AGEmojiKeyboardViewCategoryImage)category;
-
-/**
- Method called on dataSource to get the back button image to be shown in the view.
+ Method called on dataSource to get the background image to be shown behind selected tab.
  
  @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
  */
-- (UIImage *)backSpaceButtonImageForEmojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView;
+- (UIImage *)selectedBackgroundImageForEmojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView;
 
 @optional
 
