@@ -9,7 +9,7 @@
 #import "AGEmojiPageView.h"
 
 #define BACKSPACE_BUTTON_TAG 10
-#define BUTTON_FONT_SIZE 32
+#define BUTTON_FONT_SIZE 28
 
 @interface AGEmojiPageView ()
 

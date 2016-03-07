@@ -19,7 +19,9 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
     AGEmojiKeyboardViewCategoryImageActivity,
     AGEmojiKeyboardViewCategoryImageTravel,
     AGEmojiKeyboardViewCategoryImageObjects,
-    AGEmojiKeyboardViewCategoryImageSymbols
+    AGEmojiKeyboardViewCategoryImageSymbols,
+    AGEmojiKeyboardViewCategoryImageFlags,
+    AGEmojiKeyboardViewCategoryImageDelete
 };
 
 @protocol AGEmojiKeyboardViewDelegate;
@@ -85,6 +87,13 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
  @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
  */
 - (UIImage *)selectedBackgroundImageForEmojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView;
+
+/**
+ Method called on dataSource for when the delete button is hit.
+ 
+ @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
+ */
+- (void)emojiKeyBoardViewDidPressDeleteButton:(AGEmojiKeyboardView *)emojiKeyBoardView;
 
 @optional
 
