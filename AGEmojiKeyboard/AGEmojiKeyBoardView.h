@@ -11,12 +11,14 @@
 #import <UIKit/UIKit.h>
 
 typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
-  AGEmojiKeyboardViewCategoryImageRecent,
-  AGEmojiKeyboardViewCategoryImageFace,
-  AGEmojiKeyboardViewCategoryImageBell,
-  AGEmojiKeyboardViewCategoryImageFlower,
-  AGEmojiKeyboardViewCategoryImageCar,
-  AGEmojiKeyboardViewCategoryImageCharacters
+    AGEmojiKeyboardViewCategoryImageKeyboard,
+    AGEmojiKeyboardViewCategoryImageRecent,
+    AGEmojiKeyboardViewCategoryImageFace,
+    AGEmojiKeyboardViewCategoryImageBell,
+    AGEmojiKeyboardViewCategoryImageFlower,
+    AGEmojiKeyboardViewCategoryImageCar,
+    AGEmojiKeyboardViewCategoryImageCharacters,
+    AGEmojiKeyboardViewCategoryImageTravel
 };
 
 @protocol AGEmojiKeyboardViewDelegate;
@@ -25,7 +27,7 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 /**
  Keyboard class to present as an alternate.
  This keyboard presents the emojis supported by iOS.
-
+ 
  @note To modify appearance, use @p segmentsBar @p pageControl
  @p emojiPagesScrollView properties.
  */
@@ -51,7 +53,7 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 
 /**
  @param frame Frame of the view to be initialised with.
-
+ 
  @param dataSource dataSource is required during the initialization to
  get all the relevent images to present in the view.
  */
@@ -68,9 +70,9 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 
 /**
  Method called on dataSource to get the category image when selected.
-
+ 
  @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
-
+ 
  @param category category to get the image for. @see AGEmojiKeyboardViewCategoryImage
  */
 - (UIImage *)emojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView
@@ -78,9 +80,9 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 
 /**
  Method called on dataSource to get the category image when not-selected.
-
+ 
  @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
-
+ 
  @param category category to get the image for. @see AGEmojiKeyboardViewCategoryImage
  */
 - (UIImage *)emojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView
@@ -88,7 +90,7 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 
 /**
  Method called on dataSource to get the back button image to be shown in the view.
-
+ 
  @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
  */
 - (UIImage *)backSpaceButtonImageForEmojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView;
@@ -98,9 +100,9 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 /**
  Method called on dataSource to get category that should be shown by
  default i.e. when the keyboard is just presented.
-
+ 
  @note By default `AGEmojiKeyboardViewCategoryImageRecent` is shown.
-
+ 
  @param emojiKeyBoardView EmojiKeyBoardView object shown.
  */
 - (AGEmojiKeyboardViewCategoryImage)defaultCategoryForEmojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView;
@@ -108,9 +110,9 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 /**
  Method called on dataSource to get number of emojis to be maintained in
  recent category.
-
+ 
  @note By default `50` is used.
-
+ 
  @param emojiKeyBoardView EmojiKeyBoardView object shown.
  */
 - (NSUInteger)recentEmojisMaintainedCountForEmojiKeyboardView:(AGEmojiKeyboardView *)emojiKeyboardView;
@@ -125,9 +127,9 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 
 /**
  Delegate method called when user taps an emoji button
-
+ 
  @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
-
+ 
  @param emoji Emoji used by user
  */
 - (void)emojiKeyBoardView:(AGEmojiKeyboardView *)emojiKeyBoardView
@@ -135,7 +137,7 @@ typedef NS_ENUM(NSInteger, AGEmojiKeyboardViewCategoryImage) {
 
 /**
  Delegate method called when user taps on the backspace button
-
+ 
  @param emojiKeyBoardView EmojiKeyBoardView object on which user has tapped.
  */
 - (void)emojiKeyBoardViewDidPressBackSpace:(AGEmojiKeyboardView *)emojiKeyBoardView;
