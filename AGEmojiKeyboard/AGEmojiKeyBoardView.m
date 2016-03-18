@@ -27,7 +27,14 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 @property (nonatomic) NSString *category;
 @property (nonatomic) NSInteger currentPage;
 @property (nonatomic) NSInteger numberOfPages;
+@property (nonatomic) NSMutableDictionary *startingPages;
 @property (nonatomic) AGEmojiKeyboardViewCategoryImage previousCategory;
+@property (nonatomic) NSTimer *timer;
+@property (nonatomic) int categoryIndex;
+@property (nonatomic) UILabel *categoryLabel;
+@property (nonatomic) UIView *categoryLabelView;
+@property (nonatomic) UIView *topSection;
+@property (nonatomic) UIView *bottomSection;
 
 @end
 
@@ -106,11 +113,25 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 -(void)setupTabBarItems {
     
     NSMutableArray *tabBarItems = [NSMutableArray array];
-    for(int i = 0; i < self.imagesForCategory.count; i++) {
+    
+    UITabBarItem *item = [[UITabBarItem alloc] initWithTitle:@"ABC" image:nil tag:0];
+    [item setTitleTextAttributes:@{NSFontAttributeName: [UIFont fontWithName:@"OpenSans-Semibold" size:12]} forState:UIControlStateNormal];
+    [item setTitlePositionAdjustment:UIOffsetMake(4, -12)];
+    [tabBarItems addObject:item];
+    
+    
+    for(int i = 1; i < self.imagesForCategory.count; i++) {
         UITabBarItem *item = [[UITabBarItem alloc] initWithTitle:@"" image:self.imagesForCategory[i] tag:i];
-        item.imageInsets = UIEdgeInsetsMake(5, 0, -5, 0);
+        
+        if (i == self.imagesForCategory.count - 1) {
+            item.imageInsets = UIEdgeInsetsMake(5, -5, -5, 5);
+        } else {
+            item.imageInsets = UIEdgeInsetsMake(5, 0, -5, 0);
+        }
+        
         [tabBarItems addObject:item];
     }
+    
     [self.tabBar setItems:tabBarItems];
 }
 
@@ -119,7 +140,26 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
     if (self) {
         // initialize category
         
+        self.startingPages = [NSMutableDictionary dictionary];
+        self.categoryIndex = 0;
         _dataSource = dataSource;
+        
+        self.categoryLabelView = [[UIView alloc] init];
+        self.categoryLabelView.backgroundColor = [UIColor whiteColor];
+        self.categoryLabelView.layer.borderColor = [UIColor darkGrayColor].CGColor;
+        self.categoryLabelView.layer.borderWidth = 0.2;
+        
+        self.categoryLabel = [[UILabel alloc] init];
+        self.categoryLabel.text = [[self categoryNameAtIndex:self.defaultSelectedCategory] uppercaseString];
+        self.categoryLabel.font = [UIFont fontWithName:@"OpenSans-Semibold" size:12];
+        self.categoryLabel.textColor = [UIColor lightGrayColor];
+        
+        self.topSection = [[UIView alloc] init];
+        self.topSection.backgroundColor = [UIColor lightGrayColor];
+        
+        self.bottomSection = [[UIView alloc] init];
+        self.bottomSection.backgroundColor = [UIColor lightGrayColor];
+        
         
         self.category = [self categoryNameAtIndex:self.defaultSelectedCategory];
         self.previousCategory = AGEmojiKeyboardViewCategoryImageRecent;
@@ -127,13 +167,12 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
         self.tabBar = [[UITabBar alloc] init];
         self.tabBar.delegate = self;
         self.tabBar.backgroundColor = [UIColor whiteColor];
-        self.tabBar.layer.borderColor = [UIColor whiteColor].CGColor;
-        self.tabBar.clipsToBounds = YES;
         self.tabBar.tintColor = [UIColor darkGrayColor];
-        UIImage * selectedBackground = [[self.dataSource selectedBackgroundImageForEmojiKeyboardView:self] imageWithAlignmentRectInsets:UIEdgeInsetsMake(0, -2, 0, 0)];
+        self.tabBar.clipsToBounds = YES;
+        UIImage * selectedBackground = [[self.dataSource selectedBackgroundImageForEmojiKeyboardView:self] imageWithAlignmentRectInsets:UIEdgeInsetsMake(0, -5, 0, 0)];
         [self.tabBar setSelectionIndicatorImage:selectedBackground];
         [self setupTabBarItems];
-        [self addSubview:self.tabBar];
+        [self.tabBar setSelectedItem:self.tabBar.items[self.previousCategory]];
         
         self.currentPage = 0;
         
@@ -147,59 +186,88 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
         self.emojiPagesScrollView.showsVerticalScrollIndicator = NO;
         self.emojiPagesScrollView.delegate = self;
         
+        [self.categoryLabelView addSubview:self.categoryLabel];
+        [self addSubview:self.categoryLabelView];
+        [self addSubview:self.topSection];
+        [self addSubview:self.bottomSection];
         [self addSubview:self.emojiPagesScrollView];
+        [self addSubview:self.tabBar];
     }
     return self;
 }
 
-- (UIImage *)imageWithColor:(UIColor *)color {
-    CGRect rect = CGRectMake(0.0, 0.0, 1.0, 1.0);
-    UIGraphicsBeginImageContext(rect.size);
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    
-    CGContextSetFillColorWithColor(context, [color CGColor]);
-    CGContextFillRect(context, rect);
-    
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    
-    return image;
-}
-
 - (void)layoutSubviews {
-    NSUInteger numberOfPages = [self numberOfPagesForCategory:self.category
-                                                  inFrameSize:CGSizeMake(CGRectGetWidth(self.bounds),
-                                                                         CGRectGetHeight(self.bounds) - CGRectGetHeight(self.tabBar.bounds))];
     
+    NSUInteger numberOfPages = [self totalNumberOfPages];
     NSInteger currentPage = (self.currentPage > numberOfPages) ? numberOfPages : self.currentPage;
     
     // if (currentPage > numberOfPages) it is set implicitly to max pageNumber available
     self.numberOfPages = numberOfPages;
-    self.tabBar.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-CGRectGetHeight(self.tabBar.bounds), CGRectGetWidth(self.bounds), 30);
+    self.tabBar.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-CGRectGetHeight(self.tabBar.bounds), CGRectGetWidth(self.bounds), 40);
+    
+    self.categoryLabelView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), 30);
+    self.categoryLabel.frame = CGRectMake(12, 0, CGRectGetWidth(self.bounds), 30);
+    self.topSection.frame = CGRectMake(0, CGRectGetHeight(self.categoryLabelView.bounds) - 0.6, CGRectGetWidth(self.bounds), 0.6);
+    self.bottomSection.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-CGRectGetHeight(self.tabBar.bounds) - 0.6, CGRectGetWidth(self.bounds), 0.6);
     
     self.emojiPagesScrollView.frame = CGRectMake(0,
-                                                 0,
+                                                 CGRectGetHeight(self.categoryLabel.bounds),
                                                  CGRectGetWidth(self.bounds),
-                                                 CGRectGetHeight(self.bounds) - CGRectGetHeight(self.tabBar.bounds));
+                                                 CGRectGetHeight(self.bounds) - CGRectGetHeight(self.tabBar.bounds)-CGRectGetHeight(self.categoryLabel.bounds));
     [self.emojiPagesScrollView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
     self.emojiPagesScrollView.contentOffset = CGPointMake(CGRectGetWidth(self.emojiPagesScrollView.bounds) * currentPage, 0);
     self.emojiPagesScrollView.contentSize = CGSizeMake(CGRectGetWidth(self.emojiPagesScrollView.bounds) * numberOfPages,
                                                        CGRectGetHeight(self.emojiPagesScrollView.bounds));
     [self purgePageViews];
     self.pageViews = [NSMutableArray array];
-    [self setPage:currentPage];
+    [self setFirstPages];
+    
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.2 target:self selector:@selector(setAllPages) userInfo:nil repeats:NO];
+}
+
+- (void)setFirstPages {
+    NSInteger total = 0;
+    CGSize frameSize = CGSizeMake(CGRectGetWidth(self.bounds),
+                                  CGRectGetHeight(self.emojiPagesScrollView.bounds) - CGRectGetHeight(self.tabBar.bounds)-CGRectGetHeight(self.categoryLabel.bounds));
+    
+    for (int i = 0; i < 2; i++) {
+        self.category = [self categoryNameAtIndex:i];
+        for (int i = 0; i < [self numberOfPagesForCategory:self.category inFrameSize:frameSize]; i++) {
+            [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:i atFrameIndex:total];
+            total++;
+        }
+    }
+}
+
+- (NSUInteger)findSectionForPage:(NSUInteger)page {
+    
+    NSUInteger curNumber = 0;
+    for (int i = 1; i < self.categoryList.count-1; i++)  {
+        NSUInteger startingPage = [self.startingPages[[self categoryNameAtIndex:i]] intValue];
+        if (startingPage <= page) {
+            curNumber = i;
+        } else {
+            return curNumber;
+        }
+    }
+    return curNumber;
 }
 
 // Track the contentOffset of the scroll view, and when it passes the mid
 // point of the current view’s width, the views are reconfigured.
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    
     CGFloat pageWidth = CGRectGetWidth(scrollView.frame);
     NSInteger newPageNumber = floor((scrollView.contentOffset.x - pageWidth / 2) / pageWidth) + 1;
     if (self.currentPage == newPageNumber) {
         return;
     }
     self.currentPage = newPageNumber;
-    [self setPage:self.currentPage];
+    NSUInteger index = [self findSectionForPage:self.currentPage];
+    [self.tabBar setSelectedItem:self.tabBar.items[index]];
+    self.previousCategory = index;
+    self.category = [self categoryNameAtIndex:index];
+    self.categoryLabel.text = [self.category uppercaseString];
 }
 
 #pragma mark change a page on scrollView
@@ -257,14 +325,9 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 }
 
 // Set emoji page view for given index.
-- (void)setEmojiPageViewInScrollView:(UIScrollView *)scrollView atIndex:(NSUInteger)index {
+- (void)setEmojiPageViewInScrollView:(UIScrollView *)scrollView atIndex:(NSUInteger)index atFrameIndex:(NSUInteger)frameIndex {
     
-    if (![self requireToSetPageViewForIndex:index]) {
-        return;
-    }
-    
-    AGEmojiPageView *pageView = [self usableEmojiPageView];
-    
+    AGEmojiPageView *pageView = [self synthesizeEmojiPageView];
     NSUInteger rows = [self numberOfRowsForFrameSize:scrollView.bounds.size];
     NSUInteger columns = [self numberOfColumnsForFrameSize:scrollView.bounds.size];
     NSUInteger startingIndex = index * (rows * columns);
@@ -273,18 +336,10 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
                                                     fromIndex:startingIndex
                                                       toIndex:endingIndex];
     [pageView setButtonTexts:buttonTexts];
-    pageView.frame = CGRectMake(index * CGRectGetWidth(scrollView.bounds),
+    pageView.frame = CGRectMake(frameIndex * CGRectGetWidth(scrollView.bounds),
                                 0,
                                 CGRectGetWidth(scrollView.bounds),
                                 CGRectGetHeight(scrollView.bounds));
-}
-
-// Set the current page.
-// sets neightbouring pages too, as they are viewable by part scrolling.
-- (void)setPage:(NSInteger)page {
-    [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:page - 1];
-    [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:page];
-    [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:page + 1];
 }
 
 - (void)purgePageViews {
@@ -301,7 +356,8 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 }
 
 - (NSUInteger)numberOfRowsForFrameSize:(CGSize)frameSize {
-    return (NSUInteger)floor(frameSize.height / ButtonHeight);
+    return 4;
+    //    return (NSUInteger)floor(frameSize.height / ButtonHeight);
 }
 
 - (NSArray *)emojiListForCategory:(NSString *)category {
@@ -312,15 +368,33 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 }
 
 - (NSUInteger)totalNumberOfPages {
-    NSInteger *total = 0;
+    NSUInteger total = 0;
     CGSize frameSize = CGSizeMake(CGRectGetWidth(self.bounds),
-                                  CGRectGetHeight(self.bounds) - CGRectGetHeight(self.tabBar.bounds));
+                                  CGRectGetHeight(self.bounds) - CGRectGetHeight(self.tabBar.bounds)-CGRectGetHeight(self.categoryLabel.bounds));
     
-    for (NSString *categoryName in self.categoryList) {
-        total += [self numberOfPagesForCategory:categoryName inFrameSize:frameSize];
+    for (int i = 1; i < self.categoryList.count-1; i++) {
+        [self.startingPages setObject:@(total) forKey:[self categoryNameAtIndex:i]];
+        total += [self numberOfPagesForCategory:[self categoryNameAtIndex:i] inFrameSize:frameSize];
     }
     
     return total;
+}
+
+- (void)setAllPages {
+    NSInteger total = 1;
+    CGSize frameSize = CGSizeMake(CGRectGetWidth(self.bounds),
+                                  CGRectGetHeight(self.bounds) - CGRectGetHeight(self.tabBar.bounds) - CGRectGetHeight(self.categoryLabel.bounds));
+    
+    for (int i = 2; i < self.categoryList.count; i++) {
+        self.category = [self categoryNameAtIndex:i];
+        for (int i = 0; i < [self numberOfPagesForCategory:self.category inFrameSize:frameSize]; i++) {
+            [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:i atFrameIndex:total];
+            total++;
+        }
+    }
+    
+    self.category = [self categoryNameAtIndex:[self defaultSelectedCategory]];
+    self.currentPage = 0;
 }
 
 // for a given frame size of scroll view, return the number of pages
@@ -389,9 +463,10 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
     
     self.category = [self categoryNameAtIndex:index];
     [self.tabBar setSelectedItem:self.tabBar.items[index]];
-    self.currentPage = 0;
-    [self setNeedsLayout];
+    self.currentPage = [self.startingPages[self.category] intValue];
+    self.emojiPagesScrollView.contentOffset = CGPointMake(CGRectGetWidth(self.emojiPagesScrollView.bounds) * self.currentPage, 0);
     self.previousCategory = index;
+    self.categoryLabel.text = [self.category uppercaseString];
 }
 
 @end

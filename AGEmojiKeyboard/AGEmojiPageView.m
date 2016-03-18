@@ -9,7 +9,7 @@
 #import "AGEmojiPageView.h"
 
 #define BACKSPACE_BUTTON_TAG 10
-#define BUTTON_FONT_SIZE 28
+#define BUTTON_FONT_SIZE 32
 
 @interface AGEmojiPageView ()
 
@@ -66,8 +66,9 @@
 }
 
 - (CGFloat)YMarginForButtonInRow:(NSInteger)rowNumber {
-    CGFloat padding = ((CGRectGetHeight(self.bounds) - self.rows * self.buttonSize.height) / self.rows);
-    return (padding / 2 + rowNumber * (padding + self.buttonSize.height));
+    CGFloat newHeight = CGRectGetHeight(self.bounds) - 2*9;
+    CGFloat padding = (newHeight - self.rows * self.buttonSize.height) / self.rows;
+    return (padding / 2 + rowNumber * (padding + self.buttonSize.height))+9;
 }
 
 - (UIButton *)createButtonAtIndex:(NSUInteger)index {
