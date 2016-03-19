@@ -220,30 +220,30 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
                                                        CGRectGetHeight(self.emojiPagesScrollView.bounds));
     [self purgePageViews];
     self.pageViews = [NSMutableArray array];
-    [self setFirstPages];
-    
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.2 target:self selector:@selector(setAllPages) userInfo:nil repeats:NO];
+    [self setPage:currentPage];
 }
 
-- (void)setFirstPages {
-    NSInteger total = 0;
-    CGSize frameSize = CGSizeMake(CGRectGetWidth(self.bounds),
-                                  CGRectGetHeight(self.emojiPagesScrollView.bounds) - CGRectGetHeight(self.tabBar.bounds)-CGRectGetHeight(self.categoryLabel.bounds));
+- (void)setPage:(NSInteger)page {
     
-    for (int i = 0; i < 2; i++) {
-        self.category = [self categoryNameAtIndex:i];
-        for (int i = 0; i < [self numberOfPagesForCategory:self.category inFrameSize:frameSize]; i++) {
-            [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:i atFrameIndex:total];
-            total++;
-        }
-    }
+    NSString *categoryPage = [self categoryNameAtIndex:[self findSectionForPage:page-1]];
+    NSInteger relativeIndex = page - [self.startingPages[categoryPage] intValue]-1;
+    [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:relativeIndex atFrameIndex:page - 1];
+    
+    relativeIndex = page - [self.startingPages[self.category] intValue];
+    [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:relativeIndex atFrameIndex:page];
+    
+    categoryPage = [self categoryNameAtIndex:[self findSectionForPage:page+1]];
+    relativeIndex = abs([self.startingPages[categoryPage] intValue] - (page+1));
+    [self setEmojiPageViewInScrollView:self.emojiPagesScrollView atIndex:relativeIndex atFrameIndex:page + 1];
+    
+    self.category = [self categoryNameAtIndex:page];
 }
 
-- (NSUInteger)findSectionForPage:(NSUInteger)page {
+- (NSInteger)findSectionForPage:(NSInteger)page {
     
-    NSUInteger curNumber = 0;
+    NSInteger curNumber = 0;
     for (int i = 1; i < self.categoryList.count-1; i++)  {
-        NSUInteger startingPage = [self.startingPages[[self categoryNameAtIndex:i]] intValue];
+        NSInteger startingPage = [self.startingPages[[self categoryNameAtIndex:i]] intValue];
         if (startingPage <= page) {
             curNumber = i;
         } else {
@@ -268,13 +268,14 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
     self.previousCategory = index;
     self.category = [self categoryNameAtIndex:index];
     self.categoryLabel.text = [self.category uppercaseString];
+    [self setPage:self.currentPage];
 }
 
 #pragma mark change a page on scrollView
 
 // Check if setting pageView for an index is required
-- (BOOL)requireToSetPageViewForIndex:(NSUInteger)index {
-    if (index >= self.numberOfPages) {
+- (BOOL)requireToSetPageViewForIndex:(NSInteger)index {
+    if (index >= self.numberOfPages || index < 0) {
         return NO;
     }
     for (AGEmojiPageView *page in self.pageViews) {
@@ -325,13 +326,19 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 }
 
 // Set emoji page view for given index.
-- (void)setEmojiPageViewInScrollView:(UIScrollView *)scrollView atIndex:(NSUInteger)index atFrameIndex:(NSUInteger)frameIndex {
+- (void)setEmojiPageViewInScrollView:(UIScrollView *)scrollView atIndex:(NSInteger)index atFrameIndex:(NSInteger)frameIndex {
     
-    AGEmojiPageView *pageView = [self synthesizeEmojiPageView];
-    NSUInteger rows = [self numberOfRowsForFrameSize:scrollView.bounds.size];
-    NSUInteger columns = [self numberOfColumnsForFrameSize:scrollView.bounds.size];
-    NSUInteger startingIndex = index * (rows * columns);
-    NSUInteger endingIndex = (index + 1) * (rows * columns);
+    if (![self requireToSetPageViewForIndex:frameIndex]) {
+        return;
+    }
+    
+    self.category = [self categoryNameAtIndex:[self findSectionForPage:frameIndex]];
+    
+    AGEmojiPageView *pageView = [self usableEmojiPageView];
+    NSInteger rows = [self numberOfRowsForFrameSize:scrollView.bounds.size];
+    NSInteger columns = [self numberOfColumnsForFrameSize:scrollView.bounds.size];
+    NSInteger startingIndex = index * (rows * columns);
+    NSInteger endingIndex = (index + 1) * (rows * columns);
     NSMutableArray *buttonTexts = [self emojiTextsForCategory:self.category
                                                     fromIndex:startingIndex
                                                       toIndex:endingIndex];
@@ -340,6 +347,8 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
                                 0,
                                 CGRectGetWidth(scrollView.bounds),
                                 CGRectGetHeight(scrollView.bounds));
+    
+    self.category = [self categoryNameAtIndex:self.previousCategory];
 }
 
 - (void)purgePageViews {
@@ -357,7 +366,6 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
 
 - (NSUInteger)numberOfRowsForFrameSize:(CGSize)frameSize {
     return 4;
-    //    return (NSUInteger)floor(frameSize.height / ButtonHeight);
 }
 
 - (NSArray *)emojiListForCategory:(NSString *)category {
@@ -467,6 +475,7 @@ NSString *const RecentUsedEmojiCharactersKey = @"RecentUsedEmojiCharactersKey";
     self.emojiPagesScrollView.contentOffset = CGPointMake(CGRectGetWidth(self.emojiPagesScrollView.bounds) * self.currentPage, 0);
     self.previousCategory = index;
     self.categoryLabel.text = [self.category uppercaseString];
+    [self setPage:self.currentPage];
 }
 
 @end
